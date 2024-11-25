@@ -1,0 +1,89 @@
+DESCRIPTION IMAGES PREPROCESSING:
+
+- pca_reduction : Part de variance expliquée en fonction du nb de composantes pour la réduction de dimension PCA
+des images (analyse en composantes principales). Ceci nous a permis de conserver 90% de la variance expliquée des images en 
+réduisant leur taille de 4096 features (64x64) à 278.
+
+- nb_estimateurs_RF : nombre d'estimateurs (arbres) pour la Random Forest et accuracy associée. On se rend compte qu'au-delà de 200
+estimateurs l'accuracy ne progresse plus, fixant un nombre d'estimateurs idéal
+
+- pca+RF_classif_report : rapport de classification du modèle baseline PCA+RF. Accuracy globale du modèle d'environ 49%, on se rend
+compte que certains classent affichent de bonnes performances et d'autres non.
+
+- pca+RF_confusion_matrix : matrice de confusion du modèle PCA+RF. Pour les classent qui affichent de mauvaises performances, on voit
+avec quelles autres elles sont confondues.
+
+- 5_macro_cat : Ce tableau présente la manière dont on pourait regrouper les 27 catégories en 5 macro-catégories
+
+- acc_loss_resnet : évolution de la loss et de l'accuracy du resnet sur 36 epoch. Acc max 48-49%, arrêt early stopping à l'epoch 36.
+léger overfitting
+
+- acc_loss_effnet : évolution de la loss et de l'accuracy du effnet sur 15 epoch. Acc max 46%, pas fini de converger
+
+- acc_loss_vit : évolution de la loss et de l'accuracy du vit sur 10 epoch. Acc max 52%, pas fini de converger. Léger overfitting.
+
+- acc_loss_clip : print de l'évolution de la loss et de l'accuracy pour le clip. modèle stoppé à 5 epoch, pas de rapport de classif ni
+matrice de conf. Convergence très lente.
+
+- acc_loss_concat : print de l'évolution de la loss et de l'accuracy pour le model de concaténation. modèle stoppé à 3 epoch, pas de 
+rapport de classif ni matrice de conf. Convergence très lente, mais résultats rapidement satisfaisants.
+
+- comp_matrix_txt_img : comparaison des matrices de confusion pour les 2 modèles de texte et d'image. On voit par exemple que la classe
+40 est souvent confondue avec la classe 10 pour le texte, ce qui n'est pas le cas de l'image. C'est le cas pour d'autres classes, parfois le
+model texte classe mieux, parfois c'est l'image. Les 2 modèles peuvent donc se compenser.
+
+
+CE QU'IL FAUT DIRE:
+
+- On a testé 2 modèles baseline:
+  -> Random Forest Classifier
+  -> XGBoost
+- Avant de passer les données dans ces 2 algos nous leur avons appliqué une réduction de dim PCA (voir "pca_reduction")
+- Puis nous avons passé les données réduites dans les 2 algos :
+  -> Pour le random Forest: Nous avons testé plusieurs valeurs d'hyperparamètres (dont nb estimateurs, voir "nb_estimateurs_RF"),
+     puis nous avons trouvé les paramètres optimaux, les résultats nous montrent que l'algo affiche de bonnes perfs sur certaines classes
+     et de moins bonnes sur d'autres (voir "pca+RF_classif_report"). En analysant la matricede confusion, on voit par exemple que
+     la classe 10 (livres anciens) est souvent confondue avec 1160 (cartes de jeu), etc.
+  -> Pour le XGBoost : les performances étaient très proches de celles du RF, le rapport de classification et la matrice de confusion aussi
+- On en a conclut que la réduction de qualité des images et la PCA ont enlevé trop d'infos à l'image pour obtenir un résultat optimal.
+- On a l'idée d'entraîner un 1er algo sur 5 "macros-catégories" (voir "5_macro_cat") puis 1 algo par sous-catégorie, mais dans un souci de temps on passe
+à des modèles deep learning plus adaptés
+- On a testé 3 modèles Deep Learning, pour chacun, nous avons gelé les couches de feature extraction et entraîné seulement une couche de
+classification fnale adaptée à notre problématique (27 sorties):
+  -> Le ResNet50: bien connu, entraîné sur imageNet (1000 catégories), s'est arrêté via early stopping au bout de 36 epoch à 48% d'accuracy
+     (voir "acc_loss_resnet")
+  -> Le EfficientNet B5 : également pré-entraîné, a terminé ses 15 epoch avec 46% d'accuracy. Il continuait à converger. (voir "acc_loss_effnet")
+  -> Le Vision Transformer : comporte une architecture "Transformer" (encodage - décodage des images en patchs), a terminé ses 10 epoch avec
+     52% d'accuracy. (voir "acc_loss_vit")
+- Conclusions :
+  -> Le fait de geler des couches de feature extraction a potentiellement limité la capacité des modèle à s'adapter à notre jeu de données.
+  -> La frontière entre certaines catégories est très mince (par exemple : "consoles de jeu", "consoles, jeux & équipement d'occasion"), ce
+qui fait que le modèle a du mal à les différencier (le classement "humain" de base est ambigu)
+  -> Néanmoins, 2 modèles (EffNet B5 et ViT) on convergé tout le long de leur entraînement, nous laissant penser qu'il auraient pu atteindre
+de meilleures performances. Dans un souci de temps nous les avons laissés tels quels.
+- Pour terminer et allier texte et image, nous avons eu 2 idées:
+  -> entraîner un modèle multimodal:
+     Nous avons entraîner le CLIP (Contrastive Language-Image pretraining) d'OPEN AI, qui associe des paires de mots / images dans un espace
+     vectoriel et apprend à les différencier en les rapprochant ou en les éloignant.
+     Malheureusement, temps d'entraînement trop long et ressources trop limitées, le modèle a été stoppé au bout de 5 epoch (voir "acc_loss_clip")
+     Nous pensons qu'il aurait pu faire bcp mieux avec + de tps d'entraînement et de ressources
+  -> entraîner un modèle de concaténation (meilleurs modèles texte + meilleur modèle image + couche de classif)
+     Si on compare les rapports de classif / matrice de conf des meilleurs modèles texte / image, on se rend compte que les modèles
+     peuvent se compenser (certaines classes sont bien catégorisées par le model image et moins bien par le texte, et inversement, voir "comp_matrix_txt_img")
+     On entraîne donc un modèle qui prend en entrée texte + image
+     Le texte est passé dans la LR texte gelée et produit un vecteur de probas de 27 classes
+     L'image est passé dans le vit gelé et produit un vecteur de probas de 27 classes également
+     On ajoute 3 couches en sorties : 2 classif + 1 drop out pour éviter overfit
+     Elles prennent 54 entrées (les probas des 2 model) et produisent 27 sorties (les catégories)
+     Les features entraînables sont les probas de sortie des 2 modèles
+     Accuracy de près de 95% sur la validation dès la 1ère epoch (voir "")
+     On a donc stoppé le modèle car entraînement très long et perfs déjà intéressantes, le modèle convergeait peu
+     On a pas les matrices de conf et les rapports de classif du coup
+
+
+
+RECOMMANDATIONS:
+
+- grouper résultats modèles baseline (1min)
+- grouper résultats modèles deep (1min30)
+- grouper résultats modèles concat (clip : 30 sec / concat : 2 min)

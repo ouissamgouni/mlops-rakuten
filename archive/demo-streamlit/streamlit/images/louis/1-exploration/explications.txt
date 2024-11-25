@@ -1,0 +1,38 @@
+DESCRIPTION DES IMAGES :
+
+- freq_img_taille_bits.jpg : exprime la fréquence des images en fonction de leur poids, une piste que
+nous choisissons d'explorer. On observe une distribution gaussienne, la plus grande partie des images
+pèse environ 20 000 bits, soit 20 kilobit
+
+- boxplot_img_taille_bits.jpg : exprime la distribution de la taille des images en fonction des catégories
+(médiane, écarts interquartiles, outliers). Nous remarquons que cette distribution est assez disparate,
+nous avons donc de bonnes raisons de penser que la taille des images influe sur la catégorie
+
+- anova_test_img_taille_bits : Nous réalisons un test anova (qui sert à savoir si plusieurs groupes ont des
+différences significatives entre eux) avec les hypothèses suivantes:
+ -> H0 : la taille des images n'a pas d'influence sur la catégorie
+ -> H1 : la taille des images a une influence sur la catégorie
+Au vu des résulats (p-value très inférieure à 0.05) et F-stat très élevée (+ de 339), on peut rejeter
+l'hypothèse H0 au profit de la H1 : la taille des images a une influence sur la catégorie.
+C'est donc une feature qui pourrait éventuellement nous servir par la suite pour catégoriser les images,
+mais nous n'en aurons pas besoin au final car les features les plus évidentes (valeurs de pixels des img)
+suffiront.
+
+
+CE QU'IL FAUT DIRE :
+
+- les images font toutes 500x500 pixels
+- il y en a autant que de données texte, aucune entrée manquante
+(La distribution des produits a déjà été mentionnée dans le texte, ne pas la répéter)
+- Nous avons tenter d'explorer une feature qui ne paraît pas forcément évidente au 1er abord : la taille des
+images. Le but est de savoir si la taille des images est suffisamment discrimante pour les catégoriser
+- graphique "freq_img_taille_bits" -> expliquer rapidement
+- graphique "boxplot_img_taille_bits.jpg" -> expliquer rapidement
+- graphique "anova_test_img_taille_bits" -> expliquer rapidement, conclusion : oui la taille des images pourrait
+nous permettre de catégoriser et c'est une feature que nous pourrions utiliser, mais nous ne l'utiliserons pas
+car les autres features suffiront)
+
+
+RECOMMANDATIONS :
+- passer très rapidement sur cette partie (moins de 2 min)
+

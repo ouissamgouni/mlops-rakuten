@@ -1,0 +1,29 @@
+DESCRIPTION IMAGES PREPROCESSING:
+
+- exemple_preprocess_generique : un exemple d'images preprocessées qui pourront nous servir pour tous les modèles (pas de réduc taille, pas
+d'altération de la qualité, 1000 images par catégorie et transfos)
+ 
+- exemple_preprocess_deeplearning : un exemple d'images preprocessées pour les modèles deeplearning (la lib utiliée est 
+"keras", réduction taille en 224x224 et transfos)
+
+- exemple_preprocess_baseline : un exemple d'images preprocessées pour les modèles baseline (taille réduite, niveaux de gris et transfos)
+
+
+CE QU'IL FAUT DIRE:
+
+- Nous avons effectué 3 types de preprocessing:
+ -> un preprocessing "générique": utilisable par tout type de modèles. Il contient 1000 images par catégorie, et
+    30% des images ont été "augmentées" (rotations, zoom, etc.) pour diversifier le dataset. Leur taille est inchangée
+    (500x500) et pourra par la suite être adaptée en fonction des modèles (voir "exemple_preprocess_generique")
+ -> un preprocessing pour les modèles de Deep Learning : les modèles de Deep Learning sont inclues dans des
+    librairies qui contiennent leurs propres fonctions de preprocessing (voici un exemple de dataset image
+    preprocessé par keras de Tensorflow: "exemple_preprocess_deeplearning"). ce preprocessing sera adapté au cas par cas en fonction 
+    des modèles.
+ -> un preprocessing pour les modèles "baseline" : Nous allons entraîner par la suite 2 types de modèles : des
+    modèles deep learning (plus complexes) et des modèles "baseline" (plus simples).
+    Pour les modèles "baseline", nous avons réduit les images en 64x64 pixels (au lieu de 500x500).
+    Nous les avons passées en niveaux de gris. (voir graphe "exemple_preprocess_baseline")
+
+RECOMMANDATIONS:
+
+- 3 min MAX, mettre l'accent sur le preprocessing générique et le preprocessing baseline.
