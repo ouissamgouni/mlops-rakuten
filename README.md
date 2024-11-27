@@ -29,8 +29,7 @@ minikube start
 ## Usage
 
 ``` bash
-cd workflow
-pyflyte run --remote workflow.py my_wf
+pyflyte run --remote {path_to_workflow.py} {workflow_name}
 ```
 
 
