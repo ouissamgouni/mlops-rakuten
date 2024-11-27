@@ -10,16 +10,16 @@ Short description of the project
 
 ### Infra
 
-There are only two prerequisites:
+Prerequisites:
 
-* [Docker](https://docs.docker.com/get-docker/)
-* docker-compose
-* minikube
-* helm
+* [Docker](https://docs.docker.com/get-docker/) and docker-compose
+* [Minikube](https://minikube.sigs.k8s.io/docs/start/) or local Kubernetes cluster
+* [Helm](https://helm.sh/docs/intro/install/)
 ``` bash
 minikube start
 ```
 
+* [Postgresql](https://phoenixnap.com/kb/postgresql-kubernetes)
 * [Flyte](https://github.com/davidmirror-ops/flyte-the-hard-way/blob/main/docs/on-premises/single-node/002-single-node-onprem-install.md)
 * [Mlflow](https://medium.com/@heisash24/-84bd8496f360)
 * [Monitoring stack (Prometheus & Grafana)](https://medium.com/@brightband/deploying-prometheus-operator-to-a-kubernetes-cluster-c2378038c79b)
