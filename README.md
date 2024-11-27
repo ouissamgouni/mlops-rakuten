@@ -35,9 +35,6 @@ pyflyte run --remote {path_to_workflow.py} {workflow_name}
 
 ## How it looks like
 
-<p align="center">
-  <img src="./dashboard.jpeg">
-</p>
 
 ## References
 
