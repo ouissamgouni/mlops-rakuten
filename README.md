@@ -20,11 +20,17 @@ minikube start
 ```
 
 * [Postgresql](https://phoenixnap.com/kb/postgresql-kubernetes)
-* [Flyte](https://github.com/davidmirror-ops/flyte-the-hard-way/blob/main/docs/on-premises/single-node/002-single-node-onprem-install.md)
 * [Mlflow](https://medium.com/@heisash24/-84bd8496f360)
 * [Monitoring stack (Prometheus & Grafana)](https://medium.com/@brightband/deploying-prometheus-operator-to-a-kubernetes-cluster-c2378038c79b)
 * [Private docker registry](https://hub.docker.com/r/ogouni604/mlops-rakuten) 
 
+* [Flyte](https://github.com/davidmirror-ops/flyte-the-hard-way/blob/main/docs/on-premises/single-node/002-single-node-onprem-install.md)
+``` bash
+flytectl create project      
+    --id "rakuten" \
+    --description "Rakuten product category predictor" \
+    --name "Rakuten"
+```
 
 ## Usage
 
