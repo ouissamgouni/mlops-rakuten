@@ -9,7 +9,6 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score, f1_score
 import mlflow
 from mlflow.models import infer_signature
-import pickle
 import os
 from typing import Tuple
 
@@ -72,7 +71,7 @@ def validate(X_test:np.ndarray,
     # Create a new MLflow Experiment
     mlflow.set_experiment("rakuten-pcat")
 
-    # Start an MLflow run
+    # Start an MLflow clrun
     with mlflow.start_run():
         # Log the hyperparameters
         mlflow.log_params(params)
@@ -87,7 +86,7 @@ def validate(X_test:np.ndarray,
         # Log the model
         model_info = mlflow.sklearn.log_model(
             sk_model=model,
-            artifact_path="iris_model",
+            artifact_path="model",
             signature=signature,
             input_example=X_train,
             registered_model_name="rakuten-pcat",
