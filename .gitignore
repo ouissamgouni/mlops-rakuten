@@ -170,3 +170,5 @@ src/streamlit/images/image_test
 src/streamlit/images/image_train
 mlops.code-workspace
 ml-workflow/mlruns/*
+ml-workflow/model.joblib
+app/service-api/src/model

@@ -1,5 +1,4 @@
 FROM python:3.10
-# getting the model from airflow
 WORKDIR /app/
 
 COPY . .
