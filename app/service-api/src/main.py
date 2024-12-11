@@ -1,20 +1,20 @@
 from contextlib import asynccontextmanager
 from evidently import ColumnMapping
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends
 import mlflow
 from prometheus_fastapi_instrumentator import Instrumentator
 from pydantic import BaseModel
-from typing import Callable, List
-from prometheus_fastapi_instrumentator.metrics import Info
-from prometheus_client import Counter, Gauge
+from typing import List
+from prometheus_client import Gauge
 from evidently.report import Report
 from evidently.metric_preset import DataDriftPreset, ClassificationPreset
 from sklearn import datasets
-from fastapi import FastAPI
 from datetime import datetime
-from contextlib import asynccontextmanager
-from apscheduler.schedulers.background import BackgroundScheduler  # runs tasks in the background
-from apscheduler.triggers.cron import CronTrigger  # allows us to specify a recurring time for execution
+from apscheduler.schedulers.background import BackgroundScheduler  
+from src.db import User, create_db_and_tables
+from src.schemas import UserCreate, UserRead, UserUpdate
+from src.users import auth_backend, current_active_user, fastapi_users
+
 
 ml_models = {}
 
@@ -72,12 +72,39 @@ scheduler.start()
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Load the ML model
+    await create_db_and_tables()
     ml_models["model"] = mlflow.sklearn.load_model('model')
     yield
     ml_models.clear()
     scheduler.shutdown()
 
 app = FastAPI(lifespan=lifespan)
+
+app.include_router(
+    fastapi_users.get_auth_router(auth_backend), prefix="/auth/jwt", tags=["auth"]
+)
+app.include_router(
+    fastapi_users.get_register_router(UserRead, UserCreate),
+    prefix="/auth",
+    tags=["auth"],
+)
+app.include_router(
+    fastapi_users.get_reset_password_router(),
+    prefix="/auth",
+    tags=["auth"],
+)
+app.include_router(
+    fastapi_users.get_verify_router(UserRead),
+    prefix="/auth",
+    tags=["auth"],
+)
+app.include_router(
+    fastapi_users.get_users_router(UserRead, UserUpdate),
+    prefix="/users",
+    tags=["users"],
+)
+
+
 
 class Iris(BaseModel):
     data: List[List[float]]
@@ -88,7 +115,8 @@ def home():
 
 
 @app.post('/predict', tags=["predictions"])
-def get_prediction(iris: Iris):
+def get_prediction(iris: Iris, user: User = Depends(current_active_user)):
+    print(f"Hello {user.email}!")
     data = dict(iris)['data']
     model = get_model()
     prediction = model.predict(data).tolist()
