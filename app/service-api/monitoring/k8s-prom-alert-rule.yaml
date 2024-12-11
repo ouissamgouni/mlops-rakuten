@@ -1,0 +1,30 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: rakuten-cat-pred
+  namespace: monitoring
+  labels:
+    release: prometheus-operator
+
+spec:
+  groups:
+  - name: rakuten-cat-pred
+    rules:
+    - alert: RCPAccuracyDegradation
+      expr: accuracy<0.8
+      annotations:
+        summary: "RCP accuracy < 80%"
+        description: 'RCP accuracy is bellow 80%. Runbook here'
+      labels:
+        namespace: monitoring
+        app: rakuten-cat-pred
+        severity: warning
+    - alert: RCPF1ScoreDegradation
+      expr: f1_score<0.8
+      labels:
+        namespace: monitoring
+        app: rakuten-cat-pred
+        severity: critical
+      annotations:
+        summary: "RCP f1-score < 80%"
+        description: 'RCP f1-score is bellow 80%. Runbook here'

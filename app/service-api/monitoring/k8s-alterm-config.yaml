@@ -1,0 +1,26 @@
+apiVersion: monitoring.coreos.com/v1alpha1
+kind: AlertmanagerConfig
+metadata:
+  name: rakuten-cat-pred
+  namespace: monitoring
+  labels:
+    release: prometheus-operator
+spec:
+  receivers:
+    - name: slack-notifications
+      slackConfigs:
+        - channel: "Ouissam Gouni" # your channel name that you have created
+          sendResolved: true
+          iconEmoji: ":bell:"
+          text: "<!channel> \nsummary: {{ .CommonAnnotations.summary }}\ndescription: {{ .CommonAnnotations.description }}"
+  route:
+    matchers:
+      # name of the label to match
+      - name: app
+        value: rakuten-cat-pred
+        matchType: =
+    #groupBy: ["job", "severity"]
+    groupWait: 5s
+    receiver: slack-notifications
+    groupInterval: 30s
+    repeatInterval: 30s

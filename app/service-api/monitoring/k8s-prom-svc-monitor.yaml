@@ -1,7 +1,7 @@
 apiVersion: monitoring.coreos.com/v1
 kind: ServiceMonitor
 metadata:
-  name: mlops-rakuten-sample-svc-monitor
+  name: rakuten-cat-pred
   namespace: monitoring
   labels:
     release: prometheus-operator
@@ -10,6 +10,6 @@ spec:
     any: true
   selector:
     matchLabels:
-      app: mlops-rakuten-sample
+      app.kubernetes.io/name: rakuten-cat-pred
   endpoints:
   - port: web

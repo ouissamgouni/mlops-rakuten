@@ -1,0 +1,29 @@
+version: '3'
+
+vars:
+  APP_VERSION: '{{.APP_VERSION|default "latest"}}'
+
+tasks:
+  pull-model:
+    vars: 
+      MODEL_VERSION: '{{.MODEL_VERSION|default "latest"}}'
+      MLFLOW_TRACKING_URI: '{{.MLFLOW_TRACKING_URI|default "http://localhost:5000"}}'
+    cmds:
+      - MLFLOW_TRACKING_URI={{.MLFLOW_TRACKING_URI}} mlflow artifacts download --artifact-uri "models:/rakuten-pcat/{{.MODEL_VERSION}}"  --dst-path src/model
+
+  build:
+    cmds:
+      - docker build -t ogouni604/mlops-rakuten:{{.APP_VERSION}} .
+      
+  push:
+    cmds:
+      - docker push ogouni604/mlops-rakuten:{{.APP_VERSION}}
+
+  deploy:
+    cmds:
+      - helm upgrade rakuten-cat-pred helm-chart -n app  --install --set service.port=80 --set image.pullPolicy=Always --set image.tag={{.APP_VERSION}}
+
+  update-monitoring:
+    dir: monitoring
+    cmds:
+      - ./update.sh
