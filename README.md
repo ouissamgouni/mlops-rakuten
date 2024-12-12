@@ -60,5 +60,6 @@ task update-monitoring
 
 ## References
 * [Configure Alert Manager with Slack Notifications on Kubernetes Cluster](https://medium.com/@phil16terpasetheo/configure-alert-manager-with-slack-notifications-on-kubernetes-cluster-helm-kube-prometheus-stack-112878c35f26)
+* [Quick registration and authentication system for your FastAPI project](https://github.com/fastapi-users/fastapi-users/tree/master/examples/sqlalchemy)
 
 

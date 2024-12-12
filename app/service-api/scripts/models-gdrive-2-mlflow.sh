@@ -1,8 +1,12 @@
 #!/bin/bash
 
 # Variables
+# Declare a boolean variable using arithmetic evaluation
+application_enabled=true
+
+
 MLFLOW_ARTIFACT_PATH="./mlflow_artifacts"
-MLFLOW_TRACKING_URI="http://127.0.0.1:8080"
+MLFLOW_TRACKING_URI="http://localhost:5000"
 EXPERIMENT_NAME="Rakuten"
 MODEL_NAMES=("model_img" "model_text" "final_model")
 FILE_NAMES=("model_img.pth" "model_text.sav" "final_model.pth")
@@ -12,12 +16,16 @@ GDRIVE_URLS=(
     "https://drive.google.com/uc?id=1HZCFCbXdagWwloa_UMLgygu2Gh246yGy"
 )
 
-# Télécharger les fichiers depuis Google Drive
-mkdir -p "$MLFLOW_ARTIFACT_PATH"
-for i in "${!GDRIVE_URLS[@]}"; do
-    echo "Téléchargement de ${FILE_NAMES[$i]} depuis Google Drive..."
-    gdown "${GDRIVE_URLS[$i]}" -O "$MLFLOW_ARTIFACT_PATH/${FILE_NAMES[$i]}"
-done
+download=false
+
+if $download; then
+    # Télécharger les fichiers depuis Google Drive
+    mkdir -p "$MLFLOW_ARTIFACT_PATH"
+    for i in "${!GDRIVE_URLS[@]}"; do
+        echo "Téléchargement de ${FILE_NAMES[$i]} depuis Google Drive..."
+        gdown "${GDRIVE_URLS[$i]}" -O "$MLFLOW_ARTIFACT_PATH/${FILE_NAMES[$i]}"
+    done
+fi
 
 # Script Python pour interagir avec MLflow et gérer l'expérience et les artefacts
 python3 - <<EOF
@@ -27,7 +35,7 @@ import os
 # Variables
 MLFLOW_TRACKING_URI = "$MLFLOW_TRACKING_URI"
 EXPERIMENT_NAME = "$EXPERIMENT_NAME"
-MODEL_NAMES = ["model_img", "model_text", "final_model"]
+MODEL_NAMES = ["model_text", "final_model", "model_img"]
 FILE_NAMES = ["model_img.pth", "model_text.sav", "final_model.pth"]
 MLFLOW_ARTIFACT_PATH = "$MLFLOW_ARTIFACT_PATH"
 
@@ -42,7 +50,6 @@ if experiment is None:
 else:
     print(f"Expérience {EXPERIMENT_NAME} déjà existante.")
 
-# Démarrer un run et enregistrer les artefacts pour chaque modèle
 # Démarrer un run et enregistrer les artefacts pour chaque modèle
 for i in range(len(MODEL_NAMES)):
     model_name = MODEL_NAMES[i]

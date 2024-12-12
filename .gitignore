@@ -173,3 +173,4 @@ ml-workflow/mlruns/*
 ml-workflow/model.joblib
 app/service-api/src/model
 app/service-api/tmp
+app/service-api/scripts/mlflow_artifacts

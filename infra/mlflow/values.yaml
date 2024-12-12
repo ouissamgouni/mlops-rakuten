@@ -1,3 +1,14 @@
 tracking:
   auth:
     enabled: false
+  extraArgs:
+    --gunicorn-opts="--timeout=3600"
+  resources:
+    limits:
+      cpu: 1500m
+      ephemeral-storage: 2Gi
+      memory: 4Gi
+    requests:
+      cpu: '1'
+      ephemeral-storage: 1Gi
+      memory: 3Gi

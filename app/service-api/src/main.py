@@ -11,9 +11,10 @@ from evidently.metric_preset import DataDriftPreset, ClassificationPreset
 from sklearn import datasets
 from datetime import datetime
 from apscheduler.schedulers.background import BackgroundScheduler  
-from src.db import User, create_db_and_tables
-from src.schemas import UserCreate, UserRead, UserUpdate
-from src.users import auth_backend, current_active_user, fastapi_users
+from .db import User, create_db_and_tables
+from .schemas import UserCreate, UserRead, UserUpdate
+from .users import auth_backend, current_active_user, fastapi_users
+from .routers import prediction
 
 
 ml_models = {}
@@ -71,9 +72,8 @@ scheduler.start()
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Load the ML model
     await create_db_and_tables()
-    ml_models["model"] = mlflow.sklearn.load_model('model')
+    ml_models["model"] = mlflow.sklearn.load_model('models/mlflow/model')
     yield
     ml_models.clear()
     scheduler.shutdown()
@@ -109,13 +109,8 @@ app.include_router(
 class Iris(BaseModel):
     data: List[List[float]]
 
-@app.get("/")
-def home():
-    return "Hello World..."
-
-
-@app.post('/predict', tags=["predictions"])
-def get_prediction(iris: Iris, user: User = Depends(current_active_user)):
+@app.post('/predict-sample', tags=["predictions"])
+def get_prediction_sample(iris: Iris, user: User = Depends(current_active_user)):
     print(f"Hello {user.email}!")
     data = dict(iris)['data']
     model = get_model()
@@ -145,6 +140,9 @@ def push_metrics(metrics:Metrics):
     gauge_precision.set(metrics.precision)
     gauge_recall.set(metrics.recall)
     gauge_f1.set(metrics.f1score)
+
+
+app.include_router(router=prediction.router)
 
 instrumentator = Instrumentator(excluded_handlers=[".*admin.*", "/metrics"],)
 instrumentator.instrument(app).expose(app)
