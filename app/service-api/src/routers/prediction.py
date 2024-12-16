@@ -1,23 +1,30 @@
 from contextlib import asynccontextmanager
-import pickle
+from datetime import datetime
+from pathlib import Path
 import re
 import string
+import tempfile
+from time import time
+from typing import Annotated
+import uuid
 import aiofiles
 import fastapi
 import spacy
+from sqlalchemy import select
 import torch
 import joblib
-from pathlib import Path
 import logging
-from fastapi import FastAPI, HTTPException, APIRouter, UploadFile
-from sklearn.model_selection import train_test_split
+from fastapi import Depends, FastAPI, HTTPException, APIRouter, UploadFile
 import os
-from PIL import Image
 import numpy as np
 import pandas as pd
 import torch.nn as nn
 from torch.utils.data import Dataset, DataLoader
-import matplotlib.image as mpimg
+from ..db import get_async_session, Prediction
+from sqlalchemy.ext.asyncio import AsyncSession
+from minio import Minio
+
+DBSessionDep = Annotated[AsyncSession, Depends(get_async_session)]
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
@@ -86,7 +93,7 @@ class EcommerceDataset(Dataset):
 
     def __getitem__(self, idx):
         # Extraction text / img
-        text_description = self.df.iloc[idx]['desi_desc_c']
+        text_description = self.df.iloc[idx]['txt_model_in']
         #prdtypecode = self.df.iloc[idx]['prdtypecode']
 
         # path img
@@ -171,11 +178,11 @@ def clean_text_1(c):
 def prepare_text_data(data:pd.DataFrame, cleaner=clean_text_1):
     result = data.fillna({'designation':'','description':''})
     txt_data_origin= result["designation"].str.cat(result["description"], sep = " ")
-    result['desi_desc_c'] = txt_data_origin.apply(lambda x:cleaner(x))
+    result['txt_model_in'] = txt_data_origin.apply(lambda x:cleaner(x))
     return result
 
 @router.post('/predict', tags=["predictions"])
-async def get_prediction(file: UploadFile| None = None):
+async def get_prediction(file: UploadFile, db_session: DBSessionDep):
 
     try:
         contents = await file.read()
@@ -195,8 +202,9 @@ async def get_prediction(file: UploadFile| None = None):
     #df = pickle.load(file)
 
     df_raw = pd.read_csv(file.filename, index_col=0)
-    img_dir="/Users/ouissamgouni/Documents/it-workspace/bootcamp-mle-24/project-rakuten/code-v1/data/images/image_train"
-    
+
+
+
     df=prepare_text_data(df_raw)
 
     prdtypecode_sorted = ['10', '40', '50', '60', '1140', '1160', '1180', '1280', '1281', '1300', '1301', '1302', '1320', 
@@ -204,45 +212,122 @@ async def get_prediction(file: UploadFile| None = None):
                         '2705', '2905']
     
     with torch.no_grad():
-        demo_df= df.sample(n=1)
-        designation = demo_df.iloc[0]['designation']
-        logger.info('Designation: ' + str(designation))
-        description = demo_df.iloc[0]['description']
-        logger.info('Description: ' + str(description))
-
-        #prdtypecode = demo_df.iloc[0]['prdtypecode']
-
-        imgid = demo_df.iloc[0]['imageid']
-        prdid = demo_df.iloc[0]['productid']
-        image_name = f'image_{imgid}_product_{prdid}.jpg'
-        image_path = os.path.join(img_dir, image_name)   
-        
-        try:
-            mpimg.imread(image_path)
-        except FileNotFoundError as error:  
-            print('Image not found', error)
-
-
-        #logger.info('Expected product type:', prdtypecode,' ',demo_df.iloc[0]['désignation textuelle'])
 
         model_text = ml_models['text']
-        text_prediction = model_text.predict([demo_df.iloc[0]['desi_desc_c']])[0]
+        text_prediction = model_text.predict(df['txt_model_in'])
 
-        logger.info("Text model :" + str(text_prediction))
+        logger.info("Text model :%s",text_prediction)
 
         model_img = ml_models['img']
-        print(type(model_img))
-        img_prediction, _ = model_img.predict(image_path)
-        logger.info("Image model :" + str(img_prediction))
 
-        demo_dataset = EcommerceDataset(demo_df, model_text, model_img, img_dir)
-        demo_loader = DataLoader(demo_dataset, batch_size = 1, shuffle = False)
+        image_names= df.apply(lambda r: 'image_'+ str(r['imageid']) + '_product_' + str(r['productid']) +'.jpg', axis=1)  
+        #img_prediction, _ = image_path.apply(lambda x:model_img.predict(x))
+
+        minio_client = Minio("localhost:9001", secure=False, access_key="admin",secret_key="Password1234",)
+        bucket_name = "inference-images"
+        '''
+        def store_s3(imgaename):
+            imgaepath = img_dir + '/'+ imgaename
+            destination_file = Path(imgaepath).name
+
+            # Make the bucket if it doesn't exist.
+            found = client.bucket_exists(bucket_name)
+            if not found:
+                client.make_bucket(bucket_name)
+                print("Created bucket", bucket_name)
+            else:
+                print("Bucket", bucket_name, "already exists")
+
+            # Upload the file, renaming it in the process
+            client.fput_object(
+                bucket_name, destination_file, imgaepath,
+            )
+            print(
+                imgaepath, "successfully uploaded as object",
+                destination_file, "to bucket", bucket_name,
+            )
+
+        for _, value in image_path.items():
+            store_s3(value)
+    '''
+        
+
+        #logger.info("Image model :" + str(img_prediction))
+
+        pred_batch_id= uuid.uuid4()
+
+        with tempfile.TemporaryDirectory() as tmpdirname:
+            for _, image_name in image_names.items() :
+                minio_client.fget_object(bucket_name, image_name,   Path(tmpdirname)/image_name )
     
-        model_c = ml_models['final']
-        for text_features, img_features in demo_loader:
-            combined_features = torch.cat((text_features, img_features), dim = 1)
-            outputs = model_c(combined_features)
-            _, preds = torch.max(outputs, 1)
-            predicted_class = prdtypecode_sorted[preds.item()]
-            logger.info("Final model :" + predicted_class)
-            print('-'*20)
+        
+            predictions = []
+            
+            dataset = EcommerceDataset(df, model_text, model_img, tmpdirname)
+            demo_loader = DataLoader(dataset, batch_size = 1, shuffle = False)
+        
+            model_c = ml_models['final']
+        
+            for text_features, img_features in demo_loader:
+                combined_features = torch.cat((text_features, img_features), dim = 1)
+                outputs = model_c(combined_features)
+                _, preds = torch.max(outputs, 1)
+                predictions.append(prdtypecode_sorted[preds.item()])
+            logger.info("Final model : %s", predictions)
+            
+            dfresult = df.copy()
+            dfresult['prediction'] = text_prediction #predictions
+            dfresult['pred_batch_id'] = str(pred_batch_id)
+
+            def dfRowToOrm(row):
+                pred= Prediction() 
+                pred.prediction_batch_id=row['pred_batch_id']
+                pred.provided_index=row.name
+                pred.prediction=row['prediction']
+                pred.designation = row['designation']
+                pred.description = row['description']
+                pred.product_id = row['productid']
+                pred.image_id = row['imageid']
+                pred.txt_model_input = row['txt_model_in']
+                return pred
+
+            list_pred= [dfRowToOrm(row) for _, row in dfresult.iterrows() ] 
+            db_session.add_all(list_pred)
+            await db_session.commit()
+            return pred_batch_id
+
+
+
+@router.post('/ground-truth/{prediction_batch_id}', tags=["predictions"])
+async def set_ground_truth(prediction_batch_id:str, file: UploadFile, db_session: DBSessionDep):
+    try:
+        contents = await file.read()
+        async with aiofiles.open(file.filename, 'wb') as f:
+            await f.write(contents)
+    except Exception:
+        raise HTTPException(
+            status_code= fastapi.status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail='There was an error uploading the file',
+        )
+    finally:
+        await file.close()
+
+    print(f'Successfuly uploaded {file.filename}')
+    df_raw = pd.read_csv(file.filename, index_col=0)
+
+    payload=df_raw.to_dict(orient='dict')['prdtypecode']
+
+    predictions = (await db_session.scalars(select(Prediction)\
+                                            .filter(Prediction.prediction_batch_id == prediction_batch_id, Prediction.provided_index.in_(payload.keys()))))\
+                                                .fetchall()
+
+    if not predictions:
+        raise HTTPException(status_code=404, detail="Prediction not found")
+
+    for pred in predictions:
+        pred.ground_truth=payload[pred.provided_index]
+        pred.ground_truth_at=datetime.now()
+
+    await db_session.commit()
+    
+    return "updated"

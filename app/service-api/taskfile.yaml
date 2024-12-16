@@ -21,7 +21,7 @@ tasks:
 
   deploy:
     cmds:
-      - helm upgrade rakuten-cat-pred helm-chart -n app  --install --set service.port=80 --set image.pullPolicy=Always --set image.tag={{.APP_VERSION}}
+      - helm upgrade rakuten-cat-pred helm-chart -n app --  --install --set service.port=80 --set image.pullPolicy=Always --set image.tag={{.APP_VERSION}}
 
   update-monitoring:
     dir: monitoring
