@@ -171,6 +171,6 @@ src/streamlit/images/image_train
 mlops.code-workspace
 ml-workflow/mlruns/*
 ml-workflow/model.joblib
-app/service-api/src/model
-app/service-api/tmp
+**/model
 app/service-api/scripts/mlflow_artifacts
+**/tmp*

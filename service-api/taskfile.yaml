@@ -1,0 +1,39 @@
+version: '3'
+
+#vars:
+#  APP_VERSION: '{{.APP_VERSION|default "latest"}}'
+#  sh: git log -n 1 --format=%h
+
+vars:
+  DOCKER_TAG: 
+    sh: git log -n 1 --format=%h
+
+tasks:
+  pull-model:
+    vars: 
+      MODEL_VERSION: '{{.MODEL_VERSION|default "latest"}}'
+      MLFLOW_TRACKING_URI: '{{.MLFLOW_TRACKING_URI|default "http://localhost:5000"}}'
+    cmds:
+      - MLFLOW_TRACKING_URI={{.MLFLOW_TRACKING_URI}} mlflow artifacts download --artifact-uri "models:/rakuten-pcat/{{.MODEL_VERSION}}"  --dst-path src/models/mlflow/model
+
+  build:
+    cmds:
+      - docker build --build-arg DOCKER_TAG={{.DOCKER_TAG}} -t ogouni604/mlops-rakuten:{{.DOCKER_TAG}} .
+      
+  push:
+    cmds:
+      - docker push ogouni604/mlops-rakuten:{{.DOCKER_TAG}}
+
+  deploy:
+    cmds:
+      - helm upgrade --install rakuten-cat-pred helm-chart -n app --create-namespace -f prod-values.yaml --set image.tag={{.DOCKER_TAG}}
+
+  update-monitoring:
+    dir: monitoring
+    cmds:
+      - ./update.sh
+
+  models-gdrive-2-mlflow:
+    dir: scripts
+    cmds:
+      - ./models-gdrive-2-mlflow.sh

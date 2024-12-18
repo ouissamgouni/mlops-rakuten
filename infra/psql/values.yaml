@@ -1,0 +1,18 @@
+global:
+  postgresql:
+    auth:
+      postgresPassword: "JBDRVg7QWw"
+      username: "rakuten"
+      password: "rakuten"
+      database: "rakutencp"
+    passwordUpdateJob:
+      enabled: true
+
+primary:
+  persistence:
+    existingClaim: postgresql-pv-claim
+volumePermissions:
+  enabled: true
+metrics:
+  serviceMonitor:
+    namespace: monitoring
