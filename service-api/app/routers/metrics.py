@@ -2,7 +2,7 @@ from contextlib import asynccontextmanager
 import datetime
 import os
 from typing import Annotated
-from fastapi import Depends, APIRouter, FastAPI
+from fastapi import Depends, APIRouter, FastAPI, HTTPException, Request
 import pandas as pd
 from prometheus_client import Gauge, Info
 from pydantic import BaseModel
@@ -55,16 +55,19 @@ async def evaluate_prediction_batch(prediction_batch_id:int, db_session:DBSessio
 
     return metrics
 
-async def evaluate(x_last_pred:int| None =os.environ['EVAL_ON_X_LAST_PRED']):
+async def evaluate(app: FastAPI, x_last_pred:int| None =os.environ['EVAL_ON_X_LAST_PRED']):
     #limit = os.environ['EVAL_ON_X_LAST_PRED']
     print(f"Evaluating the model at {datetime.now()} on last {x_last_pred} labeled predictions")
     async with async_session_maker() as db_session:
         labeled_predictions = (await db_session.scalars(select(Prediction)\
-                                            .filter(Prediction.ground_truth.is_not(None))\
+                                            .filter(Prediction.ground_truth.is_not(None),Prediction.app_version==app.version )\
                                             .order_by(Prediction.ground_truth_at.desc())\
                                                 .limit(limit=x_last_pred)))\
                                                 .fetchall()
     df=pd.DataFrame([vars(i) for i in labeled_predictions])
+
+    if df.size==0:
+        raise HTTPException(status_code=404, detail=f"No predictions founds made by system version '{ app.version }'")
 
     current = df
     reference =current
@@ -79,8 +82,6 @@ async def evaluate(x_last_pred:int| None =os.environ['EVAL_ON_X_LAST_PRED']):
     column_mapping.prediction = 'prediction'
     #column_mapping.target_names = ['Setosa', 'Versicolour', 'Virginica']
     data_drift_report.run(current_data=current, reference_data=reference, column_mapping=column_mapping)
-    data_drift_report.save_json('report.json')
-
     metrics = {}
     report_dict = data_drift_report.as_dict()
     metrics["accuracy"] = report_dict["metrics"][0]["result"]["current"]["accuracy"]
@@ -102,7 +103,7 @@ async def evaluate(x_last_pred:int| None =os.environ['EVAL_ON_X_LAST_PRED']):
 async def lifespan(app: FastAPI):
     scheduler = AsyncIOScheduler(timezone=utc)
     scheduler.start()
-    scheduler.add_job(func=evaluate, trigger='interval', args=[], minutes=1)
+    scheduler.add_job(func=evaluate, trigger='interval', args=[app], minutes=1)
     yield
     scheduler.shutdown()
     
@@ -110,8 +111,8 @@ async def lifespan(app: FastAPI):
 router = APIRouter(lifespan=lifespan)
 
 @router.get('/evaluate', tags=["metrics"])
-async def call_evaluate(x_last_pred:int| None=None):
-    return await evaluate(x_last_pred)
+async def call_evaluate(request:Request, x_last_pred:int| None=None):
+    return await evaluate(request.app, x_last_pred)
 
 class Metrics(BaseModel):
     accuracy: float
