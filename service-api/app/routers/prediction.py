@@ -305,7 +305,7 @@ async def get_prediction(file: UploadFile, db_session: DBSessionDep, request: Re
 
 
 @router.post('/ground-truth/{prediction_batch_id}', tags=["predictions"])
-async def set_ground_truth(prediction_batch_id:str, file: UploadFile, db_session: DBSessionDep):
+async def set_ground_truth(request:Request,prediction_batch_id:str, file: UploadFile, db_session: DBSessionDep):
     try:
         contents = await file.read()
         async with aiofiles.open(file.filename, 'wb') as f:
@@ -337,7 +337,7 @@ async def set_ground_truth(prediction_batch_id:str, file: UploadFile, db_session
     metrics = await evaluate_prediction_batch(prediction_batch_id, db_session)
 
     # trigger overall metrics evaluation
-    call_evaluate()
+    call_evaluate(request)
 
     return {'prediction_batch_id':prediction_batch_id, 
             'metrics': metrics}
