@@ -30,22 +30,24 @@ Then :
 
 ## Usage
 
-### Run the ML workflow
+### Run the Data/ML workflow
 
 ``` bash
-task workflow:run {version}
+task workflow:run {version: workflow docker tag}
 ```
+Then returns Mlflow artifacts URIs
 
 ### Download a Model version
 ``` bash
-task api:pull-model {version}
+task api:pull-model {version: Mlflow artifacts URI}
 ```
 ### Build and deploy the inference service
 ``` bash
-task api:build push deploy {version}
+task api:build push deploy {version: application version}
 ```
 
-### Update monitoring
+### Update monitoring stack
+For operations like updating metrics scraping parameters, alerting rules, grafana dashboard, etc.
 ``` bash
 task api:update-monitoring
 ```
