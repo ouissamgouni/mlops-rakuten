@@ -9,22 +9,23 @@ metadata:
 spec:
   groups:
   - name: rakuten-cat-pred
+    interval: 5s
     rules:
     - alert: RCPAccuracyDegradation
-      expr: accuracy<0.75
+      expr: accuracy<0.8
       annotations:
-        summary: "RCP accuracy < 75%"
-        description: 'RCP accuracy is bellow 75%. Runbook here'
+        summary: "RCP accuracy < 80%"
+        description: 'RCP accuracy is bellow 80%. Runbook here'
       labels:
         namespace: monitoring
         app: rakuten-cat-pred
         severity: critical
     - alert: RCPF1ScoreDegradation
-      expr: f1_score<0.75
+      expr: f1_score<0.80
       labels:
         namespace: monitoring
         app: rakuten-cat-pred
         severity: warning
       annotations:
-        summary: "RCP f1-score < 75%"
+        summary: "RCP f1-score < 80%"
         description: 'RCP f1-score is bellow 75%. Runbook here'

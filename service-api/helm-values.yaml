@@ -1,0 +1,40 @@
+replicaCount: 1
+
+image:
+  repository: ogouni604/mlops-rakuten
+  pullPolicy: Always
+
+env:
+  # non sensitive variables
+  normal:
+    DB_USERNAME: "rakuten"
+    DB_HOST: "postgresql.postgresql.svc.cluster.local"
+    DB_PORT: 5432
+    DB_NAME: "rakutencp"
+    MINIO_ENDPOINT: "minio-service.minio.svc.cluster.local:9000"
+    MINIO_ACCESS_KEY: "admin"
+    MINIO_INFER_BUCKET: "inference-images"
+    EVAL_ON_X_LAST_PRED: 300
+    
+  # sensitive variables
+  secret:
+    DB_PASSWORD: "rakuten"
+    MINIO_SECRET_KEY: "Password1234"
+    
+
+livenessProbe:
+  httpGet:
+    path: /info
+    port: http
+  timeoutSeconds: 30
+  periodSeconds: 120
+  successThreshold: 1
+  failureThreshold: 3
+readinessProbe:
+  httpGet:
+    path: /info
+    port: http
+  timeoutSeconds: 30
+  periodSeconds: 120
+  successThreshold: 1
+  failureThreshold: 3

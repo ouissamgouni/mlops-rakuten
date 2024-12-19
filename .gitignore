@@ -163,11 +163,11 @@ cython_debug/
 .vscode/
 
 # Data folder
-**/data/
-old_notebooks/
-**/images
+**/app/data
 *.code-workspace
 **/mlruns*
 **/model*
-app/service-api/scripts/mlflow_artifacts
+mlflow_artifacts
 **/tmp*
+**/sandbox*
+.DS_Store

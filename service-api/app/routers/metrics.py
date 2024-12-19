@@ -4,7 +4,7 @@ import os
 from typing import Annotated
 from fastapi import Depends, APIRouter, FastAPI, HTTPException, Request
 import pandas as pd
-from prometheus_client import Gauge, Info
+from prometheus_client import Counter, Gauge, Info
 from pydantic import BaseModel
 from prometheus_client import Gauge
 from evidently import ColumnMapping
@@ -12,7 +12,7 @@ from evidently.report import Report
 from evidently.metric_preset import DataDriftPreset, ClassificationPreset
 from datetime import datetime
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
-from sqlalchemy import  select
+from sqlalchemy import  func, select
 from ..db import get_async_session, Prediction, async_session_maker
 from pytz import utc
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -22,6 +22,8 @@ gauge_acc = Gauge('accuracy', 'accuracy')
 gauge_precision = Gauge('precision', 'precision')
 gauge_recall = Gauge('recall', 'recall')
 gauge_f1 = Gauge('f1_score', 'f1-score')
+gauge_pred = Gauge('nb_preds', 'number of predictions')
+gauge_labeled_pred = Gauge('nb_labeled_preds', 'number of labeled predictions')
 
 i = Info('app_version', 'Rakuten product category predictor version')
 i.info({'version': os.environ['APP_VERSION']})
@@ -89,13 +91,27 @@ async def evaluate(app: FastAPI, x_last_pred:int| None =os.environ['EVAL_ON_X_LA
     metrics["recall"] = report_dict["metrics"][0]["result"]["current"]["recall"]
     metrics["f1-score"] = report_dict["metrics"][0]["result"]["current"]["f1"]
 
+    
+
+    async with async_session_maker() as db_session:
+        metrics["nb_predictions"] = (await db_session.scalar(select(func.count(Prediction.created_at))\
+                                            .where(Prediction.app_version==app.version )))
+        
+
+        metrics["nb_labeled_predictions"] = (await db_session.scalar(select(func.count(Prediction.created_at))\
+                                            .filter(Prediction.ground_truth.is_not(None),Prediction.app_version==app.version )))
+
+       
+
     gauge_acc.set(metrics["accuracy"])
     gauge_precision.set(metrics["precision"])
     gauge_recall.set(metrics["recall"])
     gauge_f1.set(metrics["f1-score"])
 
-    print(f"Metrics logged to Prometheus", metrics)
+    gauge_pred.set( metrics["nb_predictions"])
+    gauge_labeled_pred.set(metrics["nb_labeled_predictions"])
 
+    print(f"Metrics logged to Prometheus", metrics)
 
     return metrics
 

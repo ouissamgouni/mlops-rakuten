@@ -11,10 +11,10 @@ vars:
 tasks:
   pull-model:
     vars: 
-      MODEL_VERSION: '{{.MODEL_VERSION|default "latest"}}'
+      RUN_ID: '{{.RUN_ID|default "947b7b20acb24d6397b40f324a60a2ce"}}'
       MLFLOW_TRACKING_URI: '{{.MLFLOW_TRACKING_URI|default "http://localhost:5000"}}'
     cmds:
-      - MLFLOW_TRACKING_URI={{.MLFLOW_TRACKING_URI}} mlflow artifacts download --artifact-uri "models:/rakuten-pcat/{{.MODEL_VERSION}}"  --dst-path src/models/mlflow/model
+      - MLFLOW_TRACKING_URI={{.MLFLOW_TRACKING_URI}} mlflow artifacts download --artifact-uri "runs:/{{.RUN_ID}}/model"  --dst-path app/models/mlflow
 
   build:
     cmds:
@@ -26,14 +26,14 @@ tasks:
 
   deploy:
     cmds:
-      - helm upgrade --install rakuten-cat-pred helm-chart -n app --create-namespace -f prod-values.yaml --set image.tag={{.DOCKER_TAG}}
+      - helm upgrade --install rakuten-cat-pred helm-chart -n app --create-namespace -f helm-values.yaml --set image.tag={{.DOCKER_TAG}}
 
   update-monitoring:
     dir: monitoring
     cmds:
       - ./update.sh
 
-  models-gdrive-2-mlflow:
+  models-2-mlflow:
     dir: scripts
     cmds:
-      - ./models-gdrive-2-mlflow.sh
+      - python models_to_mlflow.py

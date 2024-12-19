@@ -183,7 +183,7 @@ async def lifespan(app: FastAPI):
     yield
     ml_models.clear()
 
-router = APIRouter(lifespan=lifespan)#, dependencies=[Depends(current_active_user)])
+router = APIRouter(lifespan=lifespan, dependencies=[Depends(current_active_user)])
 
 @router.post('/predict', tags=["predictions"])
 async def get_prediction(file: UploadFile, db_session: DBSessionDep, request: Request):
@@ -300,7 +300,8 @@ async def get_prediction(file: UploadFile, db_session: DBSessionDep, request: Re
             list_pred= [dfRowToOrm(row) for _, row in dfresult.iterrows() ] 
             db_session.add_all(list_pred)
             await db_session.commit()
-            return pred_batch_id
+            dfresult['prediction'].to_json()
+            return {"prediction_batch_id":str(pred_batch_id), "result":dfresult['prediction'].to_json()}
 
 
 

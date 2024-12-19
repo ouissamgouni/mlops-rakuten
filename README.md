@@ -22,16 +22,9 @@ Then :
 * [Mlflow](https://github.com/bitnami/charts/tree/main/bitnami/mlflow)
 * [Prometheus & Grafana](https://medium.com/@brightband/deploying-prometheus-operator-to-a-kubernetes-cluster-c2378038c79b)
 * [Minio](https://medium.com/@kapincev/easy-guide-setting-up-minio-with-microk8s-kubernetes-321048d901ac)
-
 * [Flyte](https://github.com/davidmirror-ops/flyte-the-hard-way/blob/main/docs/on-premises/single-node/002-single-node-onprem-install.md)
-``` bash
-# Init Flyte project
-flytectl create project      
-    --id "rakuten" \
-    --description "Rakuten product category predictor" \
-    --name "Rakuten"
-```
-* Docker login to [private Docker registry](https://hub.docker.com/r/ogouni604/mlops-rakuten) 
+
+* [Docker registry](https://hub.docker.com/r/ogouni604/mlops-rakuten) 
 ### Tooling
 * [Taskfile](https://taskfile.dev/installation/)
 
@@ -40,7 +33,7 @@ flytectl create project
 ### Run the ML workflow
 
 ``` bash
-task workflow:run
+task workflow:run {version}
 ```
 
 ### Download a Model version
@@ -49,7 +42,7 @@ task api:pull-model {version}
 ```
 ### Build and deploy the inference service
 ``` bash
-task api:build push deploy
+task api:build push deploy {version}
 ```
 
 ### Update monitoring

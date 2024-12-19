@@ -97,7 +97,7 @@ def validate(X_test:np.ndarray,
 def release(validation_status:bool)->str:
     # registring the model
     print("Releasing the model...")
-    return "Done"
+    return "947b7b20acb24d6397b40f324a60a2ce"
 
 @workflow
 def ml_workflow(data_selector:str) -> str:

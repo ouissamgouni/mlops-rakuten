@@ -13,5 +13,6 @@ spec:
       app.kubernetes.io/name: rakuten-cat-pred
   endpoints:
   - port: web
+    interval: 5s
   targetLabels:
     - app.kubernetes.io/version
