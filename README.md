@@ -40,21 +40,21 @@ flytectl create project
 ### Run the ML workflow
 
 ``` bash
-task run-workflow
+task workflow:run
 ```
 
 ### Download a Model version
 ``` bash
-task pull-model {version}
+task api:pull-model {version}
 ```
 ### Build and deploy the inference service
 ``` bash
-task build push deploy
+task api:build push deploy
 ```
 
 ### Update monitoring
 ``` bash
-task update-monitoring
+task api:update-monitoring
 ```
 
 

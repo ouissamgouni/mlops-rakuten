@@ -1,4 +1,4 @@
 alertmanager:
   config:
     global:
-      slack_api_url: https://hooks.slack.com/services/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
+      slack_api_url: https://hooks.slack.com/services/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

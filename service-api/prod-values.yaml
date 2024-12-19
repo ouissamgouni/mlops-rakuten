@@ -14,7 +14,7 @@ env:
     MINIO_ENDPOINT: "minio-service.minio.svc.cluster.local:9000"
     MINIO_ACCESS_KEY: "admin"
     MINIO_INFER_BUCKET: "inference-images"
-    EVAL_ON_X_LAST_PRED: 100
+    EVAL_ON_X_LAST_PRED: 300
     
   # sensitive variables
   secret:

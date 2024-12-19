@@ -1,0 +1,8 @@
+version: '3'
+includes:
+  workflow: 
+    taskfile: ./ml-workflow
+    dir: ./ml-workflow
+  api: 
+    taskfile: ./service-api 
+    dir: ./service-api 

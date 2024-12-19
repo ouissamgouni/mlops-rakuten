@@ -2,7 +2,9 @@ tracking:
   auth:
     enabled: false
   extraArgs:
-    --gunicorn-opts="--timeout=3600"
+    - --gunicorn-opts="--timeout=3600"
+  service:
+    #type: ClusterIP
   resources:
     limits:
       cpu: 1500m
